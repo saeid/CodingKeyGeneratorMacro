@@ -8,18 +8,24 @@
 import SwiftSyntax
 import SwiftSyntaxMacros
 
-public typealias Values = [(KeyPathComponentListSyntax, TokenSyntax)]
+public typealias Values = [String: String]
 
 struct Helper {
     static func getProperties(decl: StructDeclSyntax) -> [String] {
-        return decl.memberBlock.members.map(\.decl)
-            .reduce([String]()) { result, decl -> [String] in
+        return decl
+            .memberBlock
+            .members
+            .map(\.decl)
+            .reduce(into: [String]()) { result, decl in
                 guard let variableDecl = decl.as(VariableDeclSyntax.self) else {
-                    return result
+                    return
                 }
-                let properties = variableDecl.bindings.compactMap { $0.pattern.as(IdentifierPatternSyntax.self)?.identifier.text
-                }
-                return result + properties
+                let properties = variableDecl
+                    .bindings
+                    .compactMap {
+                        $0.pattern.as(IdentifierPatternSyntax.self)?.identifier.text
+                    }
+                return result.append(contentsOf: properties)
             }
     }
 
@@ -37,31 +43,26 @@ struct Helper {
             .first?.expression.as(DictionaryExprSyntax.self)?
             .content.as(DictionaryElementListSyntax.self)
 
-        let stringLiteralExpr = dictionaryElements?
-            .compactMap {
-                $0.value.as(StringLiteralExprSyntax.self)
-            }
-        let keyPathExpr = dictionaryElements?
-            .compactMap {
-                $0.key.as(KeyPathExprSyntax.self)
-            }
-        guard let keyPathSyntax = getKeyPathComponentList(keyPathExpr),
-              let stringSegmentSyntax = getStringSegmentSyntax(stringLiteralExpr) else {
+        guard let dictionaryElements = dictionaryElements else {
             return (structDecl, nil)
         }
-        let tokenSyntax = stringSegmentSyntax.compactMap { $0.content }
-        let values = zip(keyPathSyntax, tokenSyntax).map { $0 }
-        return (structDecl, values)
-    }
-
-    private static func getKeyPathComponentList(_ expr: [KeyPathExprSyntax]?) -> [KeyPathComponentListSyntax]? {
-        expr?.compactMap { $0.components }
-    }
-
-    private static func getStringSegmentSyntax(_ expr: [StringLiteralExprSyntax]?) -> [StringSegmentSyntax]? {
-        expr?
-            .compactMap {
-                $0.segments.first?.as(StringSegmentSyntax.self)
+        let dictionaryValues = dictionaryElements.reduce(into: [String: String]()) { result, element in
+            guard let key = element.key.as(StringLiteralExprSyntax.self),
+                  let value = element.value.as(StringLiteralExprSyntax.self) else {
+                result["name"] = "oh_no"
+                return
             }
+            result[key.string] = value.string
+        }
+        return (structDecl, dictionaryValues)
+    }
+}
+
+fileprivate extension StringLiteralExprSyntax {
+    var string: String {
+        segments
+            .compactMap { $0.as(StringSegmentSyntax.self) }
+            .map(\.content.text)
+            .joined()
     }
 }

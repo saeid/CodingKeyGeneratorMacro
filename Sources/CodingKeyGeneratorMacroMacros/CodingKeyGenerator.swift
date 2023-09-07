@@ -73,20 +73,14 @@ struct CodingKeyGenerator {
     }
 
     private func hasCustomValue(for property: String) -> Bool {
-        return values.contains(where: { (key, _) in
-            guard let key = key.first?.component else { return false }
-            return "\(key)" == "\(property)"
-        })
+        values.map(\.key).contains(property)
     }
 
     private func getStrategy(for property: String) -> Strategy {
-        guard let item = values.first(where: { (key, value) in
-            guard let component = key.first?.component else {
-                return false
-            }
-            return "\(component)" == property
-        }) else { return .default(property) }
-        return .custom(property, item.1.text)
+        guard let customValue = values[property] else {
+            return .default(property)
+        }
+        return .custom(property, customValue)
     }
 
     private func generateStrategy() -> [Strategy] {

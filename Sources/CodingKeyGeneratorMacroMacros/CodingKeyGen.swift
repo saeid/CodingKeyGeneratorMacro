@@ -28,7 +28,7 @@ public struct CodingKeyGen: MemberMacro {
             let properties = Helper.getProperties(decl: structDecl)
             let generator = CodingKeyGenerator(
                 properties: properties,
-                values: values ?? []
+                values: values ?? [:]
             )
 
             let decl = generator

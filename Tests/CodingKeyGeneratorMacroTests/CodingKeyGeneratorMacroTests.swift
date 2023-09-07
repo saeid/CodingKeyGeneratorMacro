@@ -12,9 +12,9 @@ final class CodingKeyGeneratorMacroTests: XCTestCase {
         assertMacroExpansion(
             #"""
             @CodingKeyGen([
-            \.name: "userValue",
-            \.id: "userid",
-            \.userName: "new_user"
+            "name": "userValue",
+            "id": "userid",
+            "userName": "new_user"
             ])
             public struct MyCodableStruct: Codable {
                 let name: String
