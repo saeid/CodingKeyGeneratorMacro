@@ -1,46 +1,70 @@
 import SwiftSyntaxMacros
 import SwiftSyntaxMacrosTestSupport
 import XCTest
-
-// Macro implementations build for the host, so the corresponding module is not available when cross-compiling. Cross-compiled tests may still make use of the macro itself in end-to-end tests.
-#if canImport(CodingKeyGeneratorMacroMacros)
 import CodingKeyGeneratorMacroMacros
 
 let testMacros: [String: Macro.Type] = [
-    "stringify": StringifyMacro.self,
+    "CodingKeyGen": CodingKeyGen.self,
 ]
-#endif
 
 final class CodingKeyGeneratorMacroTests: XCTestCase {
-    func testMacro() throws {
-        #if canImport(CodingKeyGeneratorMacroMacros)
-        assertMacroExpansion(
-            """
-            #stringify(a + b)
-            """,
-            expandedSource: """
-            (a + b, "a + b")
-            """,
-            macros: testMacros
-        )
-        #else
-        throw XCTSkip("macros are only supported when running tests for the host platform")
-        #endif
-    }
-
-    func testMacroWithStringLiteral() throws {
-        #if canImport(CodingKeyGeneratorMacroMacros)
+    func test_codingKeyMacro_withCustomValues() throws {
         assertMacroExpansion(
             #"""
-            #stringify("Hello, \(name)")
+            @CodingKeyGen([
+            \.name: "userValue",
+            \.id: "userid",
+            \.userName: "new_user"
+            ])
+            public struct MyCodableStruct: Codable {
+                let name: String
+                let id: Int
+                let userName: String
+            }
             """#,
-            expandedSource: #"""
-            ("Hello, \(name)", #""Hello, \(name)""#)
-            """#,
+            expandedSource:
+            """
+            public struct MyCodableStruct: Codable {
+                let name: String
+                let id: Int
+                let userName: String
+
+                enum CodingKeys: String, CodingKey {
+                    case name = "userValue"
+                    case id = "userid"
+                    case userName = "new_user"
+                }
+            }
+            """,
             macros: testMacros
         )
-        #else
-        throw XCTSkip("macros are only supported when running tests for the host platform")
-        #endif
+    }
+
+    func test_codingKeyMacro_withoutCustomValues() throws {
+        assertMacroExpansion(
+            #"""
+            @CodingKeyGen()
+            public struct MyCodableStruct: Codable {
+                let name: String
+                let id: Int
+                let userName: String
+            }
+            """#,
+            expandedSource:
+            """
+            public struct MyCodableStruct: Codable {
+                let name: String
+                let id: Int
+                let userName: String
+
+                enum CodingKeys: String, CodingKey {
+                    case name
+                    case id
+                    case userName
+                }
+            }
+            """,
+            macros: testMacros
+        )
     }
 }
