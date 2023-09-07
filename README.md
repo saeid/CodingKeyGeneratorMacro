@@ -59,7 +59,7 @@ public struct MyCodableStruct: Codable {
 ```
 
 ## Limitation
-In current state attached macros have bug/limitation which doesn't allow to use a reference of the type in macros argument and it results to *Circular reference resolving attached macro* error. 
+In current state @attached macros have bug/limitation which doesn't allow to use a reference of the type in macro's argument list. It results to *Circular reference resolving attached macro* error. 
 
 ## Licence
 CodingKeyGeneratorMacro is available under the MIT license. See the [LICENSE.txt](https://github.com/saeid/CodingKeyGeneratorMacro/blob/main/LICENSE) file for more info.
